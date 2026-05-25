@@ -52,6 +52,7 @@ cd dagger && go run . all --env staging --version dev --registry-user jkmlnop  #
 go install github.com/evilmartians/lefthook@latest && lefthook install
 git push              # auto-runs: dagger test + dagger test-container
 git push --no-verify  # bypass (escape hatch)
+# Lefthook prints explicit start/finish lines for each pre-push step.
 ```
 
 ## Architecture

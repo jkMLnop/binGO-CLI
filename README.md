@@ -323,6 +323,8 @@ go install github.com/evilmartians/lefthook@latest && lefthook install
 git push --no-verify  # bypass in emergencies
 ```
 
+During `git push`, Lefthook now prints explicit start/finish markers for each pre-push step so it's clear that hooks are still running.
+
 ## Project Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the development roadmap and upcoming phases.
