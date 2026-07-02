@@ -315,6 +315,12 @@ git push origin v2.0.0
 
 GitHub Actions will run the full pipeline and create a GitHub Release with cross-compiled binaries (macOS Intel, Linux x86_64) and SHA256 checksums.
 
+### Can I sign off after pushing?
+
+Yes. After your `git push` or tag push is accepted by GitHub, the GitHub Actions + Dagger pipeline runs in the cloud and will continue even if you close your terminal or sign out.
+
+Only the **local** pre-push hook (`lefthook`) must finish while you're still connected, because that step runs on your machine before the push is sent.
+
 ### Local pre-push enforcement (Lefthook)
 
 ```bash
