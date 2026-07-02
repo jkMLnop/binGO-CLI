@@ -181,7 +181,7 @@ export BASE_URL="http://localhost:8080"
 # Create a game
 curl -X POST $BASE_URL/admin/api/games -H "X-Admin-Key: $ADMIN_KEY"
 
-# List all games
+# List all games (session list)
 curl -X GET $BASE_URL/admin/api/games -H "X-Admin-Key: $ADMIN_KEY"
 
 # Get game details

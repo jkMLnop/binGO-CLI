@@ -85,6 +85,19 @@ This guide covers deploying the binGO-CLI server with persistent database to clo
    flyctl logs
    ```
 
+### Session List (Active Games)
+
+Use the Admin API list endpoint to see current game sessions:
+
+```bash
+# Set your admin key first (same key configured as ADMIN_API_KEY in Fly.io secrets)
+export ADMIN_KEY="your-admin-key"
+curl -X GET https://bingo-server.fly.dev/admin/api/games \
+  -H "X-Admin-Key: $ADMIN_KEY"
+```
+
+If the server is running in the cloud (Fly.io), it keeps running after you sign off from your local terminal/session. You only need an active terminal when tailing logs or issuing commands.
+
 ### Scale Configuration
    ```bash
    # Set number of instances
