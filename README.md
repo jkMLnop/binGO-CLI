@@ -323,6 +323,20 @@ go install github.com/evilmartians/lefthook@latest && lefthook install
 git push --no-verify  # bypass in emergencies
 ```
 
+Quick checks:
+
+```bash
+# Verify Lefthook is installed and hooks are wired
+lefthook version
+git config --get core.hooksPath
+
+# Run the same hook manually
+lefthook run pre-push
+
+# List saved local client sessions
+ls ~/.config/binGO-CLI/session-*.json
+```
+
 ## Project Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the development roadmap and upcoming phases.
