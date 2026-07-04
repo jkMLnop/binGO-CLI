@@ -17,28 +17,8 @@ coverage.out
 binGO-CLI-intel-mac
 binGO-CLI-linux
 binGO
+binGO-CLI
+binGO-CLI-test
 
-# Compiled programs (only in root directory)
-/bin
-/bingo
-/binGO
-/binGO-*
-
-# Log files
-app.log
-*.log
-
-# Dagger compiled binary
-/dagger/dagger
-
+# Media
 bingo_demo.mp4
-
-# LLM experiment sweep output (raw data; results baked into code constants)
-docs/llm-experiments/
-
-# Ignore LLM experiment harness artifacts (not the source code)
-tools/llm_experiments/*.log
-
-# Web client artifacts
-/web-client/node_modules/
-/web-client/dist/web-client/*.tsbuildinfo
