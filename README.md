@@ -13,7 +13,9 @@
 
 ![Bingo Demo](bingo_demo.gif)
 
-A terminal bingo game written in Go for quick fun in meetings. Reads phrases from `buzzwords.csv` and displays a 3x3 bingo board. Supports single-player (no dependencies) and multiplayer via WebSocket.
+A terminal bingo game written in Go for quick fun in meetings. Reads phrases from `buzzwords.csv` and displays a 3x3 bingo board. Supports single-player (no dependencies) and multiplayer via WebSocket connection to a remote binGO server.
+
+**Server code has moved to [github.com/jkMLnop/binGO](https://github.com/jkMLnop/binGO).** This repo is a pure CLI client.
 
 ## Requirements
 
@@ -68,14 +70,10 @@ go run . -mode standalone
   ./binGO-CLI -mode standalone
   ```
 
-- **`server`**: Start WebSocket server (multiplayer)
-  ```bash
-  ./binGO-CLI -mode server -port 8080
-  ```
-
-- **`client`**: Connect to a WebSocket server and play multiplayer
+- **`client`**: Connect to a remote binGO server and play multiplayer
   ```bash
   ./binGO-CLI -mode client -server localhost:8080
+  ./binGO-CLI -mode client -server bingo-server.fly.dev -code BINGO-XXXXX
   ```
 
 ## Usage
@@ -86,118 +84,14 @@ go run . -mode standalone
 - Enter a number 1-9 to mark the corresponding cell; enter `q` to quit.
 - Win by marking three in a row (horizontal, vertical, or diagonal).
 
-### Multiplayer Mode (Client/Server)
+### Multiplayer Mode (Client)
 
-#### Option 1: Local Network
-1. **On the server machine:**
-   ```bash
-   ./binGO-CLI -mode server -port 8080
-   ```
-
-2. **On client machines (same WiFi):**
-   ```bash
-   ./binGO-CLI -mode client -server <server-ip>:8080
-   ```
-   Find your server's local IP with `ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}'` (macOS) or `hostname -I` (Linux)
-
-**Note:** Local network connections automatically join the game without requiring a code.
-
-#### Option 2: Cloud Server (Fly.io)
-
-The easiest way to play remotely—just connect to the public production server:
+Connect to any running binGO server (local, LAN, or cloud):
 
 ```bash
-./binGO-CLI -mode client -server yubetcha.com -code GAME-CODE
+./binGO-CLI -mode client -server <server-address>:8080
+./binGO-CLI -mode client -server bingo-server.fly.dev -code BINGO-XXXXX
 ```
-
-Replace `GAME-CODE` with the code from a friend hosting a game, or start your own game by having someone run the server locally and share the code.
-
-#### Option 3: Internet via ngrok (with Game Code)
-
-ngrok creates a public tunnel to your local server using a reverse proxy. Your machine initiates an outgoing connection to ngrok's servers, which then routes inbound traffic from the internet back through that connection—bypassing ISP firewalls that block direct inbound connections. Perfect for testing multiplayer across the internet without cloud hosting.
-
-**Important:** Remote connections via ngrok require a game code for security. Codes are automatically generated and displayed to all connected players.
-
-**Requirements:**
-- ngrok **3.0.0+** (tested with 3.34.1). Free tier requires HTTPS/WSS connections. [Download here](https://ngrok.com/download)
-
-1. **Install ngrok** (free account required):
-   ```bash
-   brew install ngrok  # macOS
-   # or visit https://ngrok.com/download
-   ```
-
-2. **Create free account** at https://dashboard.ngrok.com/signup and get your authtoken from https://dashboard.ngrok.com/get-started/your-authtoken
-
-3. **Add authtoken:**
-   ```bash
-   ngrok config add-authtoken YOUR_TOKEN_HERE
-   ```
-
-4. **Start your server:**
-   ```bash
-   ./binGO-CLI -mode server -port 8080
-   ```
-
-5. **In another terminal, expose with ngrok:**
-   ```bash
-   ngrok http 8080
-   ```
-   You'll see output like:
-   ```
-   Forwarding    https://abc123xyz.ngrok-free.dev -> http://localhost:8080
-   ```
-   _(Note: ngrok 3.0+ free tier requires HTTPS/WSS. The client automatically detects ngrok domains and uses secure WebSocket (`wss://`) connections.)_
-
-6. **Share the ngrok URL and game code with friends.** They connect with:
-   ```bash
-   ./binGO-CLI -mode client -server abc123xyz.ngrok-free.dev -code BINGO-XXXXX
-   ```
-   Replace `BINGO-XXXXX` with the actual game code shown on the server.
-   
-   _(The client auto-detects ngrok domains and connects securely without needing to specify `wss://`)_
-
-### Gameplay
-
-- Enter a number (1-9) to mark a cell
-- Enter `board` to redisplay the board
-- First player to get 3 in a row (horizontal, vertical, diagonal) wins
-- Winner sees a celebration animation, all players exit
-
-## Admin API
-
-The Admin API allows you to programmatically create, list, and manage games. All endpoints require authentication via the `X-Admin-Key` header.
-
-### Quick Start
-
-```bash
-# Start server
-./binGO-CLI -mode server -port 8080
-
-# In another terminal, set credentials
-export ADMIN_KEY="dev-admin-key-local-only"
-export BASE_URL="http://localhost:8080"
-
-# Create a game
-curl -X POST $BASE_URL/admin/api/games -H "X-Admin-Key: $ADMIN_KEY"
-
-# List all games
-curl -X GET $BASE_URL/admin/api/games -H "X-Admin-Key: $ADMIN_KEY"
-
-# Get game details
-curl -X GET $BASE_URL/admin/api/games/game-1 -H "X-Admin-Key: $ADMIN_KEY"
-
-# Delete a game
-curl -X DELETE $BASE_URL/admin/api/games/game-1 -H "X-Admin-Key: $ADMIN_KEY"
-```
-
-**For full documentation, see [docs/ADMIN_API.md](docs/ADMIN_API.md)**
-
-Configuration: Set `ADMIN_API_KEY` environment variable to customize the admin key for production.
-
-## Board Sizes
-- **3x3 Speed Bingo** (current): Quick 9-cell game with numpad numbers 1-9
-- **5x5 Classic Bingo** (planned): Traditional 25-cell board with B-I-N-G-O letters and numbers 1-5
 
 ## Architecture
 

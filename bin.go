@@ -2,58 +2,29 @@ package main
 
 import (
 	"bufio"
-	"context"
-	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/jkMLnop/binGO-CLI/client"
-	"github.com/jkMLnop/binGO-CLI/server"
 	"github.com/jkMLnop/binGO-CLI/shared"
 	"github.com/jkMLnop/binGO-CLI/standalone"
 )
-
-//go:embed all:web-client/dist
-var webClientDist embed.FS
-
-// spaFileServer serves the embedded web client, falling back to index.html for
-// unknown paths so that React Router's client-side routing works correctly.
-func spaFileServer(dist fs.FS) http.Handler {
-	fileServer := http.FileServer(http.FS(dist))
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p := strings.TrimPrefix(r.URL.Path, "/")
-		if p == "" {
-			p = "index.html"
-		}
-		if _, err := dist.Open(p); err != nil {
-			// Path is a SPA route, not a file — serve index.html
-			http.ServeFileFS(w, r, dist, "index.html")
-			return
-		}
-		fileServer.ServeHTTP(w, r)
-	})
-}
 
 // version is set at build time via -ldflags "-X main.version=<value>"
 var version = "dev"
 
 func main() {
-	mode := flag.String("mode", "standalone", "standalone, server, or client")
+	mode := flag.String("mode", "standalone", "standalone or client")
 	serverAddr := flag.String("server", "localhost:8080", "server address for client mode (e.g., localhost:8080, 192.168.1.100:8080)")
-	code := flag.String("code", "", "game code for joining (Phase 7.3: required for remote connections)")
-	port := flag.String("port", "8080", "port for server mode")
-	dbPath := flag.String("db", "", "path to SQLite database file (Phase 7.5: optional, e.g., ./bingo.db)")
+	code := flag.String("code", "", "game code for joining (required for remote connections)")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 
@@ -65,12 +36,10 @@ func main() {
 	switch *mode {
 	case "standalone":
 		runStandalone()
-	case "server":
-		runServer(*port, *dbPath)
 	case "client":
 		runClient(*serverAddr, *code)
 	default:
-		log.Fatalf("Unknown mode: %s. Use 'standalone', 'server', or 'client'", *mode)
+		log.Fatalf("Unknown mode: %s. Use 'standalone' or 'client'", *mode)
 	}
 }
 
@@ -86,91 +55,9 @@ func runStandalone() {
 	game.RunGame()
 }
 
-func runServer(port string, dbPath string) {
-	// Load buzzwords from CSV (prefer buzzwords_full.csv if available)
-	buzzwords, err := shared.LoadBuzzwordsWithFallback()
-	if err != nil {
-		log.Fatalf("Failed to load buzzwords: %v", err)
-	}
-
-	// Create server (3x3 for speed bingo mode)
-	srv := server.NewServer(buzzwords, 3, 3, port)
-
-	// Initialize database if path provided
-	var dbConfig *server.DBConfig
-	if dbPath != "" {
-		var dbErr error
-		dbConfig, dbErr = server.NewDBConfig(dbPath)
-		if dbErr != nil {
-			log.Fatalf("Failed to initialize database: %v", dbErr)
-		}
-		srv.SetDB(dbConfig.Store)
-		log.Printf("Database enabled: %s", dbPath)
-	} else {
-		log.Println("Running without database (use -db flag to enable)")
-	}
-
-	// Initialise DeepSeek LLM client for AI buzzword generation
-	deepSeekBaseURL := os.Getenv("DEEPSEEK_BASE_URL")
-	if deepSeekBaseURL == "" {
-		deepSeekBaseURL = "https://api.deepseek.com"
-	}
-	deepSeekAPIKey := os.Getenv("DEEPSEEK_API_KEY")
-	deepSeekModel := os.Getenv("DEEPSEEK_MODEL")
-	if deepSeekModel == "" {
-		deepSeekModel = "deepseek-v4-pro"
-	}
-	srv.InitLLMClient(deepSeekBaseURL, deepSeekAPIKey, deepSeekModel)
-
-	// Serve embedded web client (Phase 7.6)
-	if distFS, fsErr := fs.Sub(webClientDist, "web-client/dist"); fsErr == nil {
-		srv.StaticHandler = spaFileServer(distFS)
-	}
-
-	// Bootstrap OpenTelemetry tracing → Grafana Tempo (or OTEL_EXPORTER_OTLP_ENDPOINT)
-	shutdownTracer, tracerErr := server.InitTracer(srv)
-	if tracerErr != nil {
-		log.Printf("Warning: failed to init tracer (traces disabled): %v", tracerErr)
-	}
-
-	// Handle graceful shutdown (SIGINT = Ctrl-C, SIGTERM = Docker/k8s stop)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		if err := srv.Start(); err != nil {
-			log.Printf("Server error: %v", err)
-		}
-	}()
-
-	// Wait for interrupt
-	<-sigChan
-	log.Println("\nShutting down server...")
-
-	// Notify all connected players before closing
-	srv.NotifyShutdown()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Stop(ctx); err != nil {
-		log.Printf("Shutdown error: %v", err)
-	}
-
-	// Close DB with the same shutdown deadline
-	if dbConfig != nil {
-		if err := dbConfig.Close(ctx); err != nil {
-			log.Printf("DB close error: %v", err)
-		}
-	}
-
-	// Flush remaining spans before exit
-	if shutdownTracer != nil {
-		shutdownTracer(ctx)
-	}
-
-	log.Println("Server stopped")
-}
+// runClient is defined below.
+// Server functionality has moved to the separate binGO repository:
+// https://github.com/jkMLnop/binGO
 
 // god method but also controller orchestrating model operations pattern
 func runClient(serverAddr string, code string) {
