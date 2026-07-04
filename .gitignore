@@ -1,7 +1,7 @@
 # Environment / credentials — never commit real secrets
 .env
 
-# Ignore buzzword file
+# Optional extended buzzword set
 buzzwords_full.csv
 
 # Ignore OS generated files
@@ -12,11 +12,11 @@ buzzwords_full.csv
 # Ignore test output files
 coverage.out
 *.log
-web-client/debug-*.png
-web-client/playwright-results.log
 
-# SQLite database files (local dev artefacts)
-*.db
+# Prebuilt binaries
+binGO-CLI-intel-mac
+binGO-CLI-linux
+binGO
 
 # Compiled programs (only in root directory)
 /bin

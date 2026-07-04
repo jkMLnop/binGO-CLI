@@ -26,30 +26,20 @@ A terminal bingo game written in Go for quick fun in meetings. Reads phrases fro
 
 ## Quick Start - Prebuilt Binaries
 
-Pre-compiled binaries are available in GitHub Releases for:
-- **macOS Intel (base)**: `binGO-CLI-intel-mac`
-- **Linux x86_64**: `binGO-CLI-linux`
+Pre-compiled binaries are available in [GitHub Releases](https://github.com/jkMLnop/binGO-CLI/releases).
 
-### Download & Run
+Download the binary for your platform, make it executable, and run:
 
-1. **Download** the binary for your platform from the [latest release](https://github.com/jkMLnop/binGO-CLI/releases):
-   ```bash
-   # macOS Intel
-   wget https://github.com/jkMLnop/binGO-CLI/releases/latest/download/binGO-CLI-intel-mac
-   chmod +x binGO-CLI-intel-mac
-   ./binGO-CLI-intel-mac -mode standalone
-   
-   # Linux x86_64
-   wget https://github.com/jkMLnop/binGO-CLI/releases/latest/download/binGO-CLI-linux
-   chmod +x binGO-CLI-linux
-   ./binGO-CLI-linux -mode standalone
-   ```
+```bash
+chmod +x ./binGO-CLI-*
+./binGO-CLI-* -mode standalone
+```
 
-2. **Or download manually:**
-   - Visit [binGO-CLI Releases](https://github.com/jkMLnop/binGO-CLI/releases)
-   - Download the binary for your OS
-   - `chmod +x` the downloaded file
-   - Run it: `./binGO-CLI-intel-mac -mode standalone` (or `-linux` for Linux)
+| Platform | Binary name |
+|----------|-------------|
+| macOS Apple Silicon | `binGO` |
+| macOS Intel | `binGO-CLI-intel-mac` |
+| Linux x86_64 | `binGO-CLI-linux` |
 
 ## Build from Source
 
@@ -104,19 +94,6 @@ binGO-CLI/
 │   ├── player.go               # Connection, board sync, input handling
 │   ├── display.go              # Client-side UI rendering
 │   └── types.go                # Client message types
-├── server/                     # Multiplayer WebSocket server
-│   ├── auth.go                 # JWT token generation & validation (IP-bound)
-│   ├── auth_test.go            # Auth unit tests
-│   ├── server.go               # WebSocket handler, game coordination
-│   ├── server_test.go          # Server unit tests
-│   ├── game.go                 # Player & Game structs with thread-safe operations
-│   ├── api.go                  # REST API endpoints (game lookup, leaderboard, status)
-│   ├── api_test.go             # API endpoint tests
-│   ├── db.go                   # Database integration & helpers
-│   ├── player_db.go            # Player database tracking
-│   ├── types.go                # Message types
-│   ├── utils.go                # Utility functions
-│   └── utils_test.go           # Utility tests
 ├── shared/                     # Shared game logic (all modes)
 │   ├── board.go                # Board management, cell marking, win detection
 │   ├── board_test.go           # Board unit tests
@@ -127,45 +104,17 @@ binGO-CLI/
 │   └── utils_test.go           # Utility tests
 ├── standalone/                 # Single-player mode
 │   └── player.go               # Game loop & input handling
-├── db/                         # Database layer (Phase 7.5)
-│   ├── store.go                # GameStore interface (abstract DB operations)
-│   ├── sqlite.go               # SQLite implementation with full CRUD
-│   └── sqlite_test.go          # Database unit tests
 ├── docs/                       # Documentation
-│   ├── ROADMAP.md              # Development phases and roadmap
-│   ├── DEPLOYMENT.md           # Cloud deployment guide (Fly.io)
-│   └── MONITORING_SETUP.md     # Monitoring & observability setup
-├── tests/                      # Integration & regression tests
-│   ├── multiplayer_test.go         # 12+ multiplayer integration tests
-│   ├── db_integration_test.go      # 7 database persistence tests
-│   ├── container_e2e_test.go       # Testcontainers-based E2E tests
-│   ├── container_regression_test.go # Container regression suite
-│   ├── full_system_load_test.go    # E2E load test (requires docker-compose)
-│   ├── README.md                   # Test documentation
-│   └── REGRESSION_TESTS.md         # Manual regression test checklist
-├── dagger/                     # Dagger CI/CD pipeline (separate Go module)
-│   ├── main.go                 # Pipeline: test, build, publish, deploy, release
-│   └── main_test.go            # Pipeline unit tests
+│   ├── ROADMAP.md              # CLI-only development roadmap
+│   └── DEVOPS.md               # Build and release notes
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions (thin trigger → Dagger)
-├── .lefthook.yml               # Git pre-push hooks (enforces tests before push)
-├── Dockerfile                  # Multi-stage Alpine build
-├── docker-compose.yml          # bingo-server + Prometheus + Grafana
-├── fly.toml                    # Fly.io production config
-├── fly.staging.toml            # Fly.io staging config
-├── prometheus.yml              # Prometheus scrape config
+│       └── ci.yml              # GitHub Actions: go test + go build
 ├── buzzwords.csv               # Default sample dataset
-├── buzzwords_full.csv          # Extended buzzword set
-├── bingo.db                    # SQLite database (created with -db flag)
-├── go.mod                      # Go module dependencies
-├── go.sum                       # Dependency checksums
-├── CHANGELOG.md                # Version history
+├── CHANGELOG.md                # Version history (archived)
 ├── LICENSE                     # MIT license
-└── binGO*                      # Prebuilt binaries (macOS, Linux)
-    ├── binGO                   # Apple Silicon binary (arm64)
-    ├── binGO-CLI-intel-mac     # Intel Mac binary (amd64)
-    └── binGO-CLI-linux         # Linux binary (amd64)
+├── go.mod                      # Go module
+└── go.sum                      # Dependency checksums
 ```
 
 ## Data
@@ -174,49 +123,25 @@ binGO-CLI/
 ## Testing
 
 ```bash
-# Unit tests (fast, no Docker)
+# Unit tests
 go test ./...
-
-# Unit + integration tests
-go test -tags=integration ./tests -v
-
-# Container regression tests (Docker must be running)
-go test -tags=container -timeout=10m ./tests -v
-
-# Run the same pipeline CI uses (via Dagger)
-cd dagger && go run . test
 ```
 
-See [tests/README.md](tests/README.md) for full test documentation.
+## CI
 
-## CI/CD
-
-All pipeline logic lives in `dagger/main.go` (a separate Go module). GitHub Actions (`.github/workflows/ci.yml`) is a thin trigger layer that calls Dagger functions. [Lefthook](.lefthook.yml) enforces the same pipeline locally before every `git push`.
-
-| Trigger | Pipeline |
-|---------|----------|
-| PR to `main` | `dagger test` (unit + integration) |
-| Push to `main` | `dagger test` → build Docker image → publish to ghcr.io → deploy to staging (Fly.io) |
-| Tag `v*` | Full pipeline → deploy to production (Fly.io) + GitHub Release with cross-compiled binaries |
+A simple GitHub Actions workflow (`.github/workflows/ci.yml`) runs `go test ./...`
+and `go build` on every push/PR to `main`. No secrets, no deployment, no containers.
 
 ### Creating a Release
 
-Tag a commit and push — the pipeline runs automatically:
-```bash
-git tag v2.0.0
-git push origin v2.0.0
-```
-
-GitHub Actions will run the full pipeline and create a GitHub Release with cross-compiled binaries (macOS Intel, Linux x86_64) and SHA256 checksums.
-
-### Local pre-push enforcement (Lefthook)
+Build the binary manually and attach to a GitHub Release:
 
 ```bash
-go install github.com/evilmartians/lefthook@latest && lefthook install
-# Every git push now runs unit+integration tests (via Dagger) and container tests automatically
-git push --no-verify  # bypass in emergencies
+go build -ldflags "-X main.version=vX.Y.Z" -o binGO-CLI .
 ```
 
-## Project Roadmap
+Prebuilt binaries are attached to [GitHub Releases](https://github.com/jkMLnop/binGO-CLI/releases).
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the development roadmap and upcoming phases.
+## Roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the CLI-only development roadmap.
